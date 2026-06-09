@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "SavedItem": {
+      "title": "SavedItem",
+      "description": "Represents an SEO asset saved by the user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["title", "keyword_list", "description", "script", "audit"] },
+        "titleName": { "type": "string" },
+        "content": { "type": "string" },
+        "seoScore": { "type": "integer" },
+        "tags": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "type", "createdAt"]
+    },
+    "SearchQuery": {
+      "title": "SearchQuery",
+      "description": "Represents keyword research volume and competition analytics",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "keyword": { "type": "string" },
+        "searchVolume": { "type": "integer" },
+        "competition": { "type": "integer" },
+        "overallScore": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "keyword", "searchVolume", "competition", "overallScore", "createdAt"]
+    },
+    "SeoAudit": {
+      "title": "SeoAudit",
+      "description": "An SEO audit checklist of a user's drafted metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "videoTitle": { "type": "string" },
+        "videoDescription": { "type": "string" },
+        "tags": { "type": "array" },
+        "score": { "type": "integer" },
+        "checklist": { "type": "object" },
+        "suggestions": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "videoTitle", "score", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/saved_items/{itemId}": {
+      "schema": "SavedItem",
+      "description": "User custom saved titles and tag templates"
+    },
+    "users/{userId}/search_history/{searchId}": {
+      "schema": "SearchQuery",
+      "description": "Keywords searched and analyzed in SEO keywords section"
+    },
+    "users/{userId}/seo_audits/{auditId}": {
+      "schema": "SeoAudit",
+      "description": "Vlog/video audits evaluated with scores and suggestions"
+    }
+  }
+}

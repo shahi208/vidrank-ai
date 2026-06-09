@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Catch-all security net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Saved Items: User customizable titles, tags and drafts
+    match /users/{userId}/saved_items/{itemId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidId(itemId)
+        && incoming().id == itemId
+        && incoming().userId == userId
+        && incoming().createdAt == request.time
+        && incoming().type in ["title", "keyword_list", "description", "script", "audit"]
+        && (incoming().titleName == null || (incoming().titleName is string && incoming().titleName.size() <= 250))
+        && (incoming().content == null || (incoming().content is string && incoming().content.size() <= 10000))
+        && (incoming().seoScore == null || incoming().seoScore is int)
+        && (incoming().tags == null || (incoming().tags is list && incoming().tags.size() <= 100));
+
+      allow update: if isOwner(userId)
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().type == existing().type
+        && (incoming().titleName == null || (incoming().titleName is string && incoming().titleName.size() <= 250))
+        && (incoming().content == null || (incoming().content is string && incoming().content.size() <= 10000))
+        && (incoming().seoScore == null || incoming().seoScore is int)
+        && (incoming().tags == null || (incoming().tags is list && incoming().tags.size() <= 100));
+    }
+
+    // Search History: Keywords queried and score-cached
+    match /users/{userId}/search_history/{searchId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidId(searchId)
+        && incoming().id == searchId
+        && incoming().userId == userId
+        && incoming().createdAt == request.time
+        && incoming().keyword is string && incoming().keyword.size() <= 150
+        && incoming().searchVolume is int && incoming().searchVolume >= 0 && incoming().searchVolume <= 100
+        && incoming().competition is int && incoming().competition >= 0 && incoming().competition <= 100
+        && incoming().overallScore is int && incoming().overallScore >= 0 && incoming().overallScore <= 100;
+
+      allow update: if false; // Immortality clause for metrics record
+    }
+
+    // SEO Audits: Complete video checkpoints evaluated
+    match /users/{userId}/seo_audits/{auditId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidId(auditId)
+        && incoming().id == auditId
+        && incoming().userId == userId
+        && incoming().createdAt == request.time
+        && incoming().videoTitle is string && incoming().videoTitle.size() <= 250
+        && (incoming().videoDescription == null || (incoming().videoDescription is string && incoming().videoDescription.size() <= 10000))
+        && (incoming().tags == null || (incoming().tags is list && incoming().tags.size() <= 100))
+        && incoming().score is int && incoming().score >= 0 && incoming().score <= 100
+        && incoming().checklist is map
+        && (incoming().suggestions == null || (incoming().suggestions is list && incoming().suggestions.size() <= 30));
+
+      allow update: if isOwner(userId)
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().videoTitle is string && incoming().videoTitle.size() <= 250
+        && (incoming().videoDescription == null || (incoming().videoDescription is string && incoming().videoDescription.size() <= 10000))
+        && (incoming().tags == null || (incoming().tags is list && incoming().tags.size() <= 100))
+        && incoming().score is int && incoming().score >= 0 && incoming().score <= 100
+        && incoming().checklist is map
+        && (incoming().suggestions == null || (incoming().suggestions is list && incoming().suggestions.size() <= 30));
+    }
+  }
+}

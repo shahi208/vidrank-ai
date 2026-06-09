@@ -1,0 +1,6 @@
+{
+  "name": "YouTube SEO & Tag Generator",
+  "description": "Generate high-CTR YouTube video titles, semantic tags, descriptions, scripting outlines, and calculate SEO checklist scores with AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
